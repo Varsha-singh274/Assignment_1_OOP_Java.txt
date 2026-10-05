@@ -1,0 +1,339 @@
+Assignment 1
+
+Q1. Explain Java's evolution from C/C++ and the role of bytecode, JVM and the Internet in Java's design.
+
+Answer 1:
+
+Evolution of Java from C/C++:
+C was developed in the early 1970s and gave structured, efficient programming and close hardware access. As programs grew larger, C++ was created in the early 1980s by adding object-oriented features (classes, objects, inheritance, polymorphism) to C. However, C and C++ programs are compiled into machine code for one specific processor and operating system, so they are not portable. C++ also has features that are error prone, such as pointers, manual memory management, and multiple inheritance of implementation.
+
+In 1991 a team at Sun Microsystems led by James Gosling started a project (initially called Oak) to create a platform independent, reliable language for embedded consumer devices. When the Internet and the World Wide Web became popular in the mid 1990s, the same need appeared for programs that could run safely on many different computers connected through a network. Oak was redesigned and released as Java in 1995.
+
+Java kept the familiar syntax of C/C++ but removed the risky features:
+- No explicit pointers, which improves security and reliability.
+- Automatic garbage collection instead of manual memory management.
+- No operator overloading and no multiple inheritance of classes (interfaces are used instead).
+- Purely object oriented design (everything is inside a class).
+- Built-in support for multithreading, exception handling and networking.
+
+Role of bytecode:
+The Java compiler (javac) does not produce machine code. It converts the source code (.java) into bytecode (.class), which is a highly optimized set of instructions for a virtual machine. Bytecode is the same on every platform. This gives Java portability ("Write Once, Run Anywhere") and helps security, because bytecode can be checked and run in a controlled environment.
+
+Role of the JVM (Java Virtual Machine):
+The JVM is a software implementation of an abstract computer that reads and executes bytecode. Each platform has its own JVM, which translates the bytecode into instructions for that machine, using an interpreter and the Just-In-Time (JIT) compiler for speed. The JVM loads classes, verifies bytecode, manages memory (heap, stack, garbage collector) and enforces security. Because only the JVM is platform specific, the same class file runs on Windows, Linux or macOS.
+
+Role of the Internet in Java's design:
+The Internet is a network of different computers and operating systems, so programs downloaded from it must run on any of them and must not harm the user's system. Java addressed this through:
+- Portability: bytecode plus the JVM lets one program run anywhere.
+- Security: the bytecode verifier, the sandbox model and the absence of pointers prevent untrusted code (such as applets) from damaging the host system.
+- Networking support: the java.net package makes it easy to work with URLs, sockets and remote resources.
+- Applets and later servlets and web applications allowed dynamic content on the web.
+
+Thus Java was designed as a simple, object oriented, secure and portable language suited to the Internet.
+
+
+Q2. Explain garbage collection, object reachability and the role of new in object creation.
+
+Answer 2:
+
+Role of the new operator in object creation:
+In Java, objects are created dynamically at run time using the new operator. The statement
+
+    Student s = new Student("Amit", 21);
+
+does the following:
+1. Declares a reference variable s of type Student (stored on the stack).
+2. new allocates memory for the object on the heap.
+3. The constructor Student(String, int) is called to initialize the object's fields.
+4. new returns the address (reference) of the object, which is stored in s.
+
+Each use of new creates a separate object. Memory for the object remains allocated as long as it can be reached through some reference.
+
+Garbage collection:
+Garbage collection is the automatic process by which the JVM finds objects that are no longer in use and frees their memory. The programmer does not need to release memory manually (unlike delete or free in C/C++). This avoids memory leaks and dangling pointer errors. The garbage collector runs as a low priority background thread. The programmer can only suggest a collection with System.gc(), but the JVM decides when to run it. Before an object is reclaimed, its finalize() method may be called (this method is deprecated in modern Java).
+
+Object reachability:
+An object is reachable if it can be accessed by a chain of references starting from a root, such as local variables on a thread stack, static fields, or active threads. An object that is not reachable from any root is unreachable and becomes eligible for garbage collection. Being eligible does not mean it is collected immediately.
+
+An object becomes unreachable when:
+1. Its reference is set to null.
+       Student s = new Student("Amit", 21);
+       s = null;               // object is now unreachable
+2. The reference is reassigned to another object.
+       Student s = new Student("A", 20);
+       s = new Student("B", 22);   // the first object is unreachable
+3. The reference goes out of scope (for example when a method returns and its local variables disappear).
+4. Islands of isolation: two objects refer to each other but nothing outside refers to them. They are unreachable even though their reference counts are not zero, and the garbage collector (which uses reachability tracing and not reference counting) can reclaim them.
+
+Java also has strong, soft, weak and phantom references, which affect how reachable an object is considered to be by the collector.
+
+
+Q3. Trace a Java expression containing arithmetic, relational, logical, assignment and increment operators, showing operator precedence.
+
+Answer 3:
+
+Operator precedence (highest to lowest) for the operators used here:
+1. Postfix and prefix increment/decrement:  a++  --b  ++c
+2. Multiplicative:  *  /  %
+3. Additive:  +  -
+4. Relational:  <  >  <=  >=
+5. Equality:  ==  !=
+6. Logical AND:  &&
+7. Logical OR:  ||
+8. Assignment:  =  +=  -=  *=  (lowest, right to left)
+
+Program:
+
+    public class OperatorTrace {
+        public static void main(String[] args) {
+            int a = 10, b = 5, c = 2;
+
+            boolean result = a + b * c > 15 && b - c < a || ++c == 0;
+            System.out.println("result = " + result);
+            System.out.println("c = " + c);
+
+            int d = a++ + --b;
+            d *= 2;
+            System.out.println("a = " + a + ", b = " + b + ", d = " + d);
+        }
+    }
+
+Trace of statement 1:
+    boolean result = a + b * c > 15 && b - c < a || ++c == 0;
+
+Values: a = 10, b = 5, c = 2
+
+Step 1: Multiplication first:   b * c  = 5 * 2 = 10
+Step 2: Addition:               a + 10 = 20
+Step 3: Subtraction:            b - c  = 5 - 2 = 3
+Step 4: Relational operators:   20 > 15 is true
+                                3 < 10 is true
+Step 5: Logical AND (&&):       true && true = true
+Step 6: Logical OR (||):        the left side is already true, so the right side (++c == 0) is short-circuited and is NOT evaluated.
+Step 7: Assignment (=):         result = true
+
+The grouping according to precedence is:
+    (((a + (b * c)) > 15) && ((b - c) < a)) || ((++c) == 0)
+
+Because of short-circuit evaluation, ++c is never executed, so c remains 2.
+
+Trace of statement 2:
+    int d = a++ + --b;
+
+- a++ (postfix): uses the current value 10, then a becomes 11.
+- --b (prefix): b becomes 4 first, then the value 4 is used.
+- Addition: 10 + 4 = 14
+- Assignment: d = 14
+
+Statement 3:
+    d *= 2;   ->  d = d * 2 = 14 * 2 = 28   (compound assignment)
+
+Output:
+    result = true
+    c = 2
+    a = 11, b = 4, d = 28
+
+
+Q4. Design a Student class using fields, constructors, methods, access modifiers and this keyword.
+
+Answer 4:
+
+The Student class below uses private fields (data hiding), a default constructor, a parameterized constructor, public getter and setter methods, and the this keyword.
+
+Uses of this in the program:
+- this.name = name distinguishes the instance variable from the parameter with the same name.
+- this("Unknown", 0, 0.0) calls another constructor of the same class (constructor chaining).
+- this.display() / this refers to the current object.
+
+Access modifiers:
+- private: fields are accessible only within the class.
+- public: constructors and methods can be accessed from any class.
+
+Program:
+
+    class Student {
+        // fields (private access)
+        private String name;
+        private int rollNo;
+        private double marks;
+
+        // default constructor using this() to call another constructor
+        public Student() {
+            this("Unknown", 0, 0.0);
+        }
+
+        // parameterized constructor using this keyword
+        public Student(String name, int rollNo, double marks) {
+            this.name = name;
+            this.rollNo = rollNo;
+            this.marks = marks;
+        }
+
+        // getters
+        public String getName() {
+            return name;
+        }
+
+        public int getRollNo() {
+            return rollNo;
+        }
+
+        public double getMarks() {
+            return marks;
+        }
+
+        // setters with validation
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public void setMarks(double marks) {
+            if (marks >= 0 && marks <= 100) {
+                this.marks = marks;
+            } else {
+                System.out.println("Invalid marks");
+            }
+        }
+
+        // method to compute grade
+        public char getGrade() {
+            if (marks >= 75) return 'A';
+            else if (marks >= 60) return 'B';
+            else if (marks >= 40) return 'C';
+            else return 'F';
+        }
+
+        // method to display details
+        public void display() {
+            System.out.println("Roll No : " + this.rollNo);
+            System.out.println("Name    : " + this.name);
+            System.out.println("Marks   : " + this.marks);
+            System.out.println("Grade   : " + getGrade());
+        }
+    }
+
+    public class StudentDemo {
+        public static void main(String[] args) {
+            Student s1 = new Student("Amit", 101, 82.5);
+            Student s2 = new Student();
+
+            s2.setName("Riya");
+            s2.setMarks(67);
+
+            s1.display();
+            System.out.println();
+            s2.display();
+        }
+    }
+
+Output:
+    Roll No : 101
+    Name    : Amit
+    Marks   : 82.5
+    Grade   : A
+
+    Roll No : 0
+    Name    : Riya
+    Marks   : 67.0
+    Grade   : B
+
+
+Q5. Develop a small Java application combining constructors, overloaded methods, recursion and encapsulated data.
+
+Answer 5:
+
+The application below is a simple bank Account program.
+- Encapsulated data: owner, balance and rate are private and are accessed only through public methods.
+- Constructors: a default constructor and a parameterized constructor.
+- Overloaded methods: deposit(double) and deposit(double, String) have the same name but different parameters.
+- Recursion: projectedBalance(amount, years) calls itself to compute the balance after a number of years with compound interest.
+
+Program:
+
+    class Account {
+        private String owner;
+        private double balance;
+        private double rate;      // yearly interest rate in percent
+
+        // default constructor
+        public Account() {
+            this("Unknown", 0, 4.0);
+        }
+
+        // parameterized constructor
+        public Account(String owner, double balance, double rate) {
+            this.owner = owner;
+            this.balance = balance;
+            this.rate = rate;
+        }
+
+        // overloaded method 1
+        public void deposit(double amount) {
+            if (amount > 0) {
+                balance += amount;
+                System.out.println("Deposited " + amount);
+            }
+        }
+
+        // overloaded method 2
+        public void deposit(double amount, String note) {
+            deposit(amount);
+            System.out.println("Note: " + note);
+        }
+
+        public boolean withdraw(double amount) {
+            if (amount > 0 && amount <= balance) {
+                balance -= amount;
+                return true;
+            }
+            return false;
+        }
+
+        // recursive method: compound interest for given years
+        public double projectedBalance(double amount, int years) {
+            if (years == 0) {
+                return amount;
+            }
+            return projectedBalance(amount * (1 + rate / 100), years - 1);
+        }
+
+        public double getBalance() {
+            return balance;
+        }
+
+        public String getOwner() {
+            return owner;
+        }
+    }
+
+    public class BankApp {
+        public static void main(String[] args) {
+            Account acc = new Account("Riya", 1000, 5);
+
+            acc.deposit(500);
+            acc.deposit(200, "Bonus");
+
+            if (acc.withdraw(300)) {
+                System.out.println("Withdrawal successful");
+            }
+
+            System.out.println("Owner   : " + acc.getOwner());
+            System.out.println("Balance : " + acc.getBalance());
+            System.out.printf("Balance after 2 years: %.2f%n",
+                    acc.projectedBalance(acc.getBalance(), 2));
+        }
+    }
+
+Output:
+    Deposited 500.0
+    Deposited 200.0
+    Note: Bonus
+    Withdrawal successful
+    Owner   : Riya
+    Balance : 1400.0
+    Balance after 2 years: 1543.50
+
+Working of the recursion (rate = 5%, amount = 1400, years = 2):
+    projectedBalance(1400, 2) -> projectedBalance(1470.0, 1)
+                              -> projectedBalance(1543.5, 0)
+                              -> returns 1543.5
